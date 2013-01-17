@@ -1,0 +1,17 @@
+#!/bin/bash
+NODE="app1 app2"
+
+for STR in $(crm_mon -f1 | grep fail-count| awk '{ print $1 "@" $3 }') ; do
+	RES=$(echo $STR |awk 'BEGIN {FS="@"}{print (substr($1,0,length($1)-1))}')
+        FAIL=$(echo $STR |awk 'BEGIN {FS="@"}{print (substr($2,12,length($2)))}')
+
+        if [[ $FAIL == 1000000 ]]; then
+                echo "cleanup $RES"
+                crm resource cleanup $RES
+        else
+                echo "clear fail-count $RES"
+                for i in $NODE ; do
+                        crm resource failcount $RES delete bms$i
+                done 
+        fi
+done
