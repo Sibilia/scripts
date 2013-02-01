@@ -1,0 +1,80 @@
+#!/bin/bash
+#
+# /opt/pmm-bms/sbin/rotate-j3-logs.sh /opt/just 2>&1>> /home/bms-backup/.engines-logs/log-rotate-just.log
+#
+
+EngineDir=$1
+EngineName=$(basename $EngineDir)
+LogsDir=$EngineDir/log
+ArcDir='/home/bms-backup/.engines-logs/J3-extra-logs'
+HostName=$(hostname)
+locFileLim='30' ; jIndex='0'
+LogFile=$(dirname $ArcDir)'/log-rotate-'${EngineName}'-extra.log'
+MaxLogFStr='1024'
+MaxLogSize=$((1024*1024*1024))	# 1 Gb
+NumberFile=1000
+
+ActualDirName=$(date '+%Y-%m-%d')
+ActualTime=$(date '+%Y-%m-%d %H:%M:%S %z')
+
+#####################################################################
+if [[ $(du "$LogsDir/$ActualDirName") < $MaxLogSize ]]; then
+	exit 0
+fi
+###################
+
+if [ ! -d "$ArcDir" ]; then
+	mkdir -p $ArcDir
+fi
+
+if [ -f "$LogFile" ]; then
+	CurLogStrs=$(cat $LogFile | wc -l)
+	if [ "$CurLogStrs" -gt "$MaxLogFStr" ]; then
+		mv -f ${LogFile} ${LogFile}'.0'
+	fi
+else
+	touch $LogFile
+fi
+
+echo "$ActualTime    Engine: $EngineName"
+echo "$ActualTime EngineDir: $EngineDir"
+echo "$ActualTime   LogsDir: $LogsDir"
+echo "$ActualTime    ArcDir: $ArcDir"
+
+### tar -cz -T /dev/null -f /tmp/test555
+if [ -f "/dev/shm/temp.$EngineName" ]; then rm -f "/dev/shm/temp.$EngineName"; fi
+
+find "$LogsDir/$ActualDirName" -type f -name "??????_[0-9]*" >> /dev/shm/temp.$EngineName
+
+count=1
+part_num=1
+for i in $(find "$LogsDir/$ActualDirName" -type f -name "??????_[0-9]*"); do
+	tar -rzf "$ArcDir/$EngineName-on-$HostName-$ActualDirName_$part_num.tar.gz" $i
+	count=
+
+
+for i in $(seq 50); do
+	tar -rzf "$ArcDir/$EngineName-on-$HostName-$ActualDirName_$i.tar.gz" $(tail -n $NumberFile /dev/shm/temp.$EngineName)
+	temp=$(head -n $( /dev/shm/temp.$EngineName
+done
+
+for LogDir in $( find "$LogsDir/$ActualDirName" -type f -name '??????_^{present}' ); do
+	LogDirBaseName=$(basename $LogDir)
+	if [ "$LogDirBaseName" != "$ActualDirName" ]; then
+		echo "$ActualTime  Archiving $LogDir..."
+		tar cz "$LogDir" > "$ArcDir/$EngineName-on-$HostName-$LogDirBaseName.tar.gz"
+		rm -rf "$LogDir"
+	else
+		echo "$ActualTime   Skipping $LogDir..."
+	fi
+done
+echo '----------------------------------------------------------------'
+
+for IND in `find ${ArcDir}/ -maxdepth 1 -type f -name '*-????-??-??.tar.gz' | sort -r`; do
+	if [ "${jIndex}" -lt "${locFileLim}" ]; then :
+	else
+		rm -f $IND
+	fi
+	jIndex=$(($jIndex+1))
+done
+
