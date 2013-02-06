@@ -16,8 +16,7 @@ NumberFile=1000
 ActualDirName=$(date '+%Y-%m-%d')
 
 #####################################################################
-if [[ $(du "$LogsDir/$ActualDirName"| cut -f1) < $MaxLogSize ]]; then
-	echo "Size $(du $LogsDir/$ActualDirName). exit"
+if [ "$(du "$LogsDir/$ActualDirName"| cut -f1)" -lt "$MaxLogSize" ]; then
 	exit 0
 fi
 ###################
