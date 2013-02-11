@@ -14,7 +14,7 @@ MaxLogSize=$((1024*1024*1024))	# 1 Gb
 NumberFile=1000
 
 ActualDirName=$(date '+%Y-%m-%d')
-
+Datetime=$(date '+%R')
 #####################################################################
 if [ "$(du "$LogsDir/$ActualDirName"| cut -f1)" -lt "$MaxLogSize" ]; then
 	exit 0
@@ -43,7 +43,7 @@ find "$LogsDir/$ActualDirName" -type f -name "??????_[0-9]*.log" > /dev/shm/temp
 
 for i in seq $(( $(cat /dev/shm/temp.$EngineName.1 |wc -l)/$NumberFile +1 )) ; do
 	log_files=$(head -n $NumberFile /dev/shm/temp.$EngineName.1)
-	tar -czf "$ArcDir/$EngineName-on-$HostName-$ActualDirName-$i.tar.gz" $log_files
+	tar -czf "$ArcDir/$EngineName-on-$HostName-$ActualDirName-$Datetime-$i.tar.gz" $log_files
 	rm -f $log_files
 	sed "1,$NumberFile d" /dev/shm/temp.$EngineName.1 > /dev/shm/temp.$EngineName.2
 	mv /dev/shm/temp.$EngineName.2 /dev/shm/temp.$EngineName.1
