@@ -51,7 +51,7 @@ else
         prev_start=0
 fi
 
-for i in $(seq $prev_start $(( $(cat /dev/shm/temp.$EngineName.1 |wc -l)/$NumberFile +1 )) ; do
+for i in $(seq $prev_start $(( $(cat /dev/shm/temp.$EngineName.1 |wc -l)/$NumberFile + $prev_start )) ) ; do
         log_files=$(head -n $NumberFile /dev/shm/temp.$EngineName.1)
         tar -czf "$ArcDir/$EngineName-on-$HostName-$ActualDirName-$i.tar.gz" $log_files
         rm -f $log_files
