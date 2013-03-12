@@ -5,7 +5,7 @@
 
 EngineDir=$1
 EngineName=$(basename $EngineDir)
-LogsDir=$EngineDir/log
+LogsDir="$EngineDir/log"
 ArcDir='/home/bms-backup/.engines-logs/J3-extra-logs'
 HostName=$(hostname)
 LogFile=$(dirname $ArcDir)'/log-rotate-'${EngineName}'-extra.log'
@@ -14,10 +14,9 @@ MaxLogSize=$((1024*1024*1024*10))       # 10 Gb
 NumberFile=700
 
 ActualDirName=$(date '+%Y-%m-%d')
-Datetime=$(date '+%R')
 #####################################################################
 if [[ $(du "$LogsDir/$ActualDirName"| cut -f1) < $MaxLogSize ]]; then
-        echo "start false: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
+#       echo "start false: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
         exit 0
 else
         echo "start true: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
@@ -44,7 +43,7 @@ echo "$ActualTime    ArcDir: $ArcDir"
 
 find "$LogsDir/$ActualDirName" -type f -name "??????_[0-9]*.log" > /dev/shm/temp.$EngineName.1
 
-local prev_start=
+prev_start=
 if [ -e "$ArcDir/$EngineName-on-$HostName-$ActualDirName-0.tar.gz" ]; then
         prev_start=$(ls -la "$ArcDir/$EngineName-on-$HostName-$ActualDirName-*" |wc -l)
 else
