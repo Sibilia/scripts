@@ -1,0 +1,233 @@
+#!/bin/sh
+#
+# Resource script for lsync daemon
+#
+# Description:  Manages lsync daemon as an OCF resource in 
+#               an High Availability setup.
+#
+# Author: Ilia Sibiryatkin <Sibvilian@gmail.com>
+# License: GNU General Public License (GPL) 
+#
+#	usage: $0 {start|stop|status|monitor|validate-all|meta-data}
+#
+#	The "start" arg starts lsyncd.
+#
+#	The "stop" arg stops it.
+#
+# OCF parameters:
+# OCF_RESKEY_binpath
+# OCF_RESKEY_conffile
+# OCF_RESKEY_pidfile
+# OCF_RESKEY_cmdline_options
+#
+##########################################################################
+# Initialization:
+
+: ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/lib/heartbeat}
+. ${OCF_FUNCTIONS_DIR}/ocf-shellfuncs
+
+
+##########################################################################
+
+usage() {
+	echo "Usage: $0 {start|stop|status|monitor|validate-all|meta-data}" >&2
+}
+
+meta_data() {
+cat <<END
+<?xml version="1.0"?>
+<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+<resource-agent name="lsyncd">
+<version>1.0</version>
+<longdesc lang="en">
+This script manages lsync daemon
+</longdesc>
+<shortdesc lang="en">Manages an lsync daemon</shortdesc>
+
+<parameters>
+
+<parameter name="binpath" required="0">
+<longdesc lang="en">
+The lsyncd binary path.
+For example, "/usr/bin/lsyncd"
+</longdesc>
+<shortdesc lang="en">Full path to the lsyncd binary</shortdesc>
+<content type="string" default="lsyncd"/>
+</parameter>
+
+<parameter name="conffile" required="0">
+<longdesc lang="en">
+The lsyncd daemon configuration file name with full path. 
+For example, "/etc/lsyncd.conf"
+</longdesc>
+<shortdesc lang="en">Configuration file name with full path</shortdesc>
+<content type="string" default="/etc/lsyncd.conf" />
+</parameter>
+
+<parameter name="pidfile" required="0">
+<longdesc lang="en">
+The lsyncd daemon pid file name with full path.
+For example, "/var/run/lsyncd.pid"
+</longdesc>
+<shortdesc lang="en">Pid file name with full path</shortdesc>
+<content type="string" default="/var/run/lsyncd.pid" />
+</parameter>
+
+<parameter name="cmdline_options" required="0">
+<longdesc lang="en">
+Command line options to pass to the lsyncd.
+</longdesc>
+<shortdesc lang="en">Command line options</shortdesc>
+<content type="string" default="" />
+</parameter>
+
+</parameters>
+
+<actions>
+<action name="start" timeout="20s"/>
+<action name="stop" timeout="20s"/>
+<action name="monitor" depth="0" timeout="20s" interval="60s" />
+<action name="validate-all" timeout="20s"/>
+<action name="meta-data"  timeout="5s"/>
+</actions>
+</resource-agent>
+END
+exit $OCF_SUCCESS
+}
+
+get_pid_and_conf_file() {
+	if [ -n "$OCF_RESKEY_conffile" ]; then
+		CONF_FILE=$OCF_RESKEY_conffile
+	else
+		CONF_FILE="/etc/lsyncd.conf"
+	fi
+    
+	if [ -n "$OCF_RESKEY_pidfile" ]; then
+		PIDFILE=$OCF_RESKEY_pidfile
+	else
+		PIDFILE="/var/run/lsyncd.pid"
+	fi
+}
+
+lsyncd_status() {
+	if [ -f $PIDFILE ]; then
+		# lsyncd is probably running
+		PID=`cat $PIDFILE`
+		if [ -n "$PID" ]; then
+			if ps -p $PID | grep lsyncd >/dev/null ; then
+				ocf_log info "lsyncd daemon running"
+				return $OCF_SUCCESS
+			else
+				ocf_log info "lsyncd daemon is not running but pid file exists"
+				return $OCF_NOT_RUNNING
+			fi
+		else
+			ocf_log err "PID file empty!"
+			return $OCF_ERR_GENERIC
+		fi
+	fi
+	
+	# lsyncd is not running
+	ocf_log info "lsyncd daemon is not running"
+	return $OCF_NOT_RUNNING
+}
+
+lsyncd_start() {
+	# if lsyncd is running return success
+	lsyncd_status
+	retVal=$?
+	if [ $retVal -eq $OCF_SUCCESS ]; then
+		exit $OCF_SUCCESS
+	elif [ $retVal -ne $OCF_NOT_RUNNING ]; then
+		ocf_log err "Error. Unknown status."
+		exit $OCF_ERR_GENERIC
+	fi
+
+	if [ -n "$OCF_RESKEY_binpath" ]; then
+		COMMAND="$OCF_RESKEY_binpath -pidfile $PIDFILE $OCF_RESKEY_cmdline_options $CONF_FILE"
+	else
+		COMMAND="lsyncd -pidfile $PIDFILE $OCF_RESKEY_cmdline_options $CONF_FILE"
+	fi
+
+	$COMMAND
+
+	if [ $? -ne 0 ]; then
+		ocf_log err "Lsycn daemon returned error $?."
+		exit $OCF_ERR_GENERIC
+	fi
+
+	ocf_log info "Lsyncd daemon started successfully."
+	return $OCF_SUCCESS
+}
+
+lsyncd_stop() {
+	if lsyncd_status ; then
+		PID=`cat $PIDFILE`
+		if [ -n "$PID" ] ; then
+			kill $PID
+			if [ $? -ne 0 ]; then
+				kill -s KILL $PID
+				if [ $? -ne 0 ]; then
+					ocf_log err "Error. Could not stop lsyncd daemon."
+					return $OCF_ERR_GENERIC
+				fi
+			fi
+			rm -f $PIDFILE >/dev/null
+		fi
+	fi
+	ocf_log info "Stopped lsyncd daemon."
+	exit $OCF_SUCCESS
+}
+
+lsyncd_monitor() {
+	lsyncd_status
+}
+
+lsyncd_validate_all() {
+	if [ -n "$OCF_RESKEY_binpath" -a ! -x "$OCF_RESKEY_binpath" ]; then
+		ocf_log err "Binary path $OCF_RESKEY_binpath does not exist."
+		exit $OCF_ERR_ARGS
+	fi
+	if [ -n "$OCF_RESKEY_conffile" -a ! -f "$OCF_RESKEY_conffile" ]; then
+		ocf_log err "Config file $OCF_RESKEY_conffile does not exist."
+		exit $OCF_ERR_ARGS
+	fi
+	return $OCF_SUCCESS
+}
+
+###############  Start  ###############
+ 
+if [ $# -ne 1 ]; then
+	usage
+	exit $OCF_ERR_ARGS
+fi
+get_pid_and_conf_file
+
+case $1 in
+	start)	
+		lsyncd_start	
+	;;	
+	stop)
+		lsyncd_stop		
+	;;
+	status)
+		lsyncd_status
+	;;
+	monitor)
+		lsyncd_monitor
+	;;
+	validate-all)
+		lsyncd_validate_all
+	;;
+	meta-data)
+		meta_data
+	;;
+	usage)
+		usage
+		exit $OCF_SUCCESS
+	;;
+
+	*)	usage
+		exit $OCF_ERR_UNIMPLEMENTED
+	;;
+esac
