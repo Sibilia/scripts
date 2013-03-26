@@ -52,7 +52,7 @@ The lsyncd binary path.
 For example, "/usr/bin/lsyncd"
 </longdesc>
 <shortdesc lang="en">Full path to the lsyncd binary</shortdesc>
-<content type="string" default="lsyncd"/>
+<content type="string" default="/usr/bin/lsyncd"/>
 </parameter>
 
 <parameter name="conffile" required="0">
