@@ -145,29 +145,31 @@ lsyncd_start() {
 
 	if [ -n "$OCF_RESKEY_binpath" ]; then
 		COMMAND="$OCF_RESKEY_binpath -pidfile $PIDFILE $OCF_RESKEY_cmdline_options $CONF_FILE"
+		ocf_log debug "$COMMAND"
 	else
 		COMMAND="lsyncd -pidfile $PIDFILE $OCF_RESKEY_cmdline_options $CONF_FILE"
+		ocf_log debug "$COMMAND"
 	fi
 
 	$COMMAND
 
-	if [ $? -ne 0 ]; then
-		ocf_log err "Lsycn daemon returned error $?."
-		exit $OCF_ERR_GENERIC
+	if lsyncd_status; then
+		ocf_log info "Lsyncd daemon started successfully."
+		return $OCF_SUCCESS
+	else
+		ocf_log err "Lsyncd could not be started"
+		return $OCF_ERR_GENERIC
 	fi
-
-	ocf_log info "Lsyncd daemon started successfully."
-	return $OCF_SUCCESS
 }
 
 lsyncd_stop() {
 	if lsyncd_status ; then
 		PID=`cat $PIDFILE`
 		if [ -n "$PID" ] ; then
-			kill $PID
-			if [ $? -ne 0 ]; then
-				kill -s KILL $PID
-				if [ $? -ne 0 ]; then
+			kill $PID > /dev/null 2>&1
+			if [ "$?" -ne 0 ]; then
+				kill -s 9 $PID > /dev/null 2>&1
+				if [ "$?" -ne 0 ]; then
 					ocf_log err "Error. Could not stop lsyncd daemon."
 					return $OCF_ERR_GENERIC
 				fi
@@ -181,6 +183,7 @@ lsyncd_stop() {
 
 lsyncd_monitor() {
 	lsyncd_status
+	return $?
 }
 
 lsyncd_validate_all() {
@@ -210,8 +213,13 @@ case $1 in
 	stop)
 		lsyncd_stop		
 	;;
-	status)
-		lsyncd_status
+	status)     if lsyncd_status; then
+					ocf_log info "Lsyncd is running"
+					exit $OCF_SUCCESS
+				else
+					ocf_log info "Lsyncd is stopped"
+					exit $OCF_NOT_RUNNING
+				fi
 	;;
 	monitor)
 		lsyncd_monitor
