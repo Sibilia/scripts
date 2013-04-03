@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/bash 
 #
-# /opt/pmm-bms/sbin/rotate-j3-extra-logs /opt/just 2>&1>> /home/bms-backup/.engines-logs/log-rotate-just-extra.log
+# usage:
+# /opt/pmm-bms/sbin/rotate-j3-extra-logs.sh /opt/just 2>&1>> /home/bms-backup/.engines-logs/log-rotate-just-extra.log
 #
 
 EngineDir=$1
@@ -14,11 +15,16 @@ MaxLogSize=$((1024*1024*1024*10))       # 10 Gb
 NumberFile=700
 
 ActualDirName=$(date '+%Y-%m-%d')
+
+log() {
+        echo $1 >> $LogFile
+}
 #####################################################################
 if [[ $(du "$LogsDir/$ActualDirName"| cut -f1) < $MaxLogSize ]]; then
-#       echo "start false: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
+#       log "start false: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
         exit 0
 else
+        log "start true: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
         echo "start true: size $(du -h "$LogsDir/$ActualDirName"| cut -f1)"
 fi
 ###################
@@ -36,10 +42,10 @@ else
         touch $LogFile
 fi
 
-echo "$ActualTime    Engine: $EngineName"
-echo "$ActualTime EngineDir: $EngineDir"
-echo "$ActualTime   LogsDir: $LogsDir"
-echo "$ActualTime    ArcDir: $ArcDir"
+log "$ActualTime    Engine: $EngineName"
+log "$ActualTime EngineDir: $EngineDir"
+log "$ActualTime   LogsDir: $LogsDir"
+log "$ActualTime    ArcDir: $ArcDir"
 
 find "$LogsDir/$ActualDirName" -type f -name "??????_[0-9]*.log" > /dev/shm/temp.$EngineName.1
 
@@ -52,13 +58,15 @@ fi
 
 for i in $(seq $prev_start $(( $(cat /dev/shm/temp.$EngineName.1 |wc -l)/$NumberFile + $prev_start )) ) ; do
         log_files=$(head -n $NumberFile /dev/shm/temp.$EngineName.1)
-        tar -czf "$ArcDir/$EngineName-on-$HostName-$ActualDirName-$i.tar.gz" $log_files
-        rm -f $log_files
+        echo "create $(( $i + 1 - $prev_start)) archive file"
+        tar --remove-files -czf "$ArcDir/$EngineName-on-$HostName-$ActualDirName-$i.tar.gz" $log_files
+#       rm -f $log_files
         sed "1,$NumberFile d" /dev/shm/temp.$EngineName.1 > /dev/shm/temp.$EngineName.2
         mv /dev/shm/temp.$EngineName.2 /dev/shm/temp.$EngineName.1
 done
+echo "end rotate $EngineName logs"
 
 rm -f /dev/shm/temp.$EngineName.1
 
-echo "$ActualTime End rotate J3 extra log"
-echo "---------------------------------------------------------------"
+log "$ActualTime End rotate J3 extra log"
+log "---------------------------------------------------------------"
