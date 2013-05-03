@@ -8,7 +8,7 @@
 
 NODE=`crm_node -l |cut -d' ' -f 2`
 
-for RES in $(crm_mon -f1 |grep fail-count |awk '{ print $1}' |sort -u |awk '{print (substr($1,0,length($1)-1))}') ; do
+for RES in $(crm_mon -f1 |grep fail-count |awk '{ print $1}' |awk '{print (substr($1,0,length($1)-1))}') ; do
 	for i in $NODE ; do
 		FAIL_VALUE=$(crm resource failcount $RES show $i |cut -d' ' -f4 |cut -d= -f2)
 		if [[ $FAIL_VALUE == INFINITY ]]; then
