@@ -105,7 +105,7 @@ get_pid_and_conf_file() {
 	if [ -n "$OCF_RESKEY_pidfile" ]; then
 		PIDFILE=$OCF_RESKEY_pidfile
 	else
-		PIDFILE="/var/run/lsyncd.pid"
+		PIDFILE="/var/run/${OCF_RESOURCE_INSTANCE}.pid"
 	fi
 }
 
