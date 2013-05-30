@@ -38,58 +38,57 @@ cat <<END
 <?xml version="1.0"?>
 <!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
 <resource-agent name="lsyncd">
-<version>1.0</version>
-<longdesc lang="en">
-This script manages lsync daemon
-</longdesc>
-<shortdesc lang="en">Manages an lsync daemon</shortdesc>
+	<version>1.0</version>
+	<longdesc lang="en">
+		This script manages lsync daemon
+	</longdesc>
+	<shortdesc lang="en">Manages an lsync daemon</shortdesc>
 
-<parameters>
+	<parameters>
+		<parameter name="binpath" required="0">
+			<longdesc lang="en">
+				The lsyncd binary path.
+				For example, "/usr/bin/lsyncd"
+			</longdesc>
+			<shortdesc lang="en">Full path to the lsyncd binary</shortdesc>
+			<content type="string" default="/usr/bin/lsyncd"/>
+		</parameter>
 
-<parameter name="binpath" required="0">
-<longdesc lang="en">
-The lsyncd binary path.
-For example, "/usr/bin/lsyncd"
-</longdesc>
-<shortdesc lang="en">Full path to the lsyncd binary</shortdesc>
-<content type="string" default="/usr/bin/lsyncd"/>
-</parameter>
+		<parameter name="conffile" required="0">
+			<longdesc lang="en">
+				The lsyncd daemon configuration file name with full path. 
+				For example, "/etc/lsyncd.conf"
+			</longdesc>
+			<shortdesc lang="en">Configuration file name with full path</shortdesc>
+			<content type="string" default="/etc/lsyncd.conf" />
+		</parameter>
 
-<parameter name="conffile" required="0">
-<longdesc lang="en">
-The lsyncd daemon configuration file name with full path. 
-For example, "/etc/lsyncd.conf"
-</longdesc>
-<shortdesc lang="en">Configuration file name with full path</shortdesc>
-<content type="string" default="/etc/lsyncd.conf" />
-</parameter>
+		<parameter name="pidfile" required="0">
+			<longdesc lang="en">
+				The lsyncd daemon pid file name with full path.
+				For example, "/var/run/lsyncd.pid"
+			</longdesc>
+			<shortdesc lang="en">Pid file name with full path</shortdesc>
+			<content type="string" default="/var/run/lsyncd.pid" />
+		</parameter>
 
-<parameter name="pidfile" required="0">
-<longdesc lang="en">
-The lsyncd daemon pid file name with full path.
-For example, "/var/run/lsyncd.pid"
-</longdesc>
-<shortdesc lang="en">Pid file name with full path</shortdesc>
-<content type="string" default="/var/run/lsyncd.pid" />
-</parameter>
+		<parameter name="cmdline_options" required="0">
+			<longdesc lang="en">
+				Command line options to pass to the lsyncd.
+			</longdesc>
+			<shortdesc lang="en">Command line options</shortdesc>
+			<content type="string" default="" />
+		</parameter>
 
-<parameter name="cmdline_options" required="0">
-<longdesc lang="en">
-Command line options to pass to the lsyncd.
-</longdesc>
-<shortdesc lang="en">Command line options</shortdesc>
-<content type="string" default="" />
-</parameter>
+	</parameters>
 
-</parameters>
-
-<actions>
-<action name="start" timeout="20s"/>
-<action name="stop" timeout="20s"/>
-<action name="monitor" depth="0" timeout="20s" interval="60s" />
-<action name="validate-all" timeout="20s"/>
-<action name="meta-data"  timeout="5s"/>
-</actions>
+	<actions>
+		<action name="start" timeout="20s"/>
+		<action name="stop" timeout="20s"/>
+		<action name="monitor" depth="0" timeout="20s" interval="60s" />
+		<action name="validate-all" timeout="20s"/>
+		<action name="meta-data"  timeout="5s"/>
+	</actions>
 </resource-agent>
 END
 exit $OCF_SUCCESS
