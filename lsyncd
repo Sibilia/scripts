@@ -142,8 +142,8 @@ lsyncd_start() {
 		exit $OCF_ERR_GENERIC
 	fi
 
-	if [ ROOT -eq '' ]; then 
-		export ROOT=/
+	if [ "$HOME" != "/root" ]; then
+		export HOME=/root
 	fi
 
 	if [ -n "$OCF_RESKEY_binpath" ]; then
@@ -155,6 +155,7 @@ lsyncd_start() {
 	fi
 
 	$COMMAND
+	sleep 3
 
 	if lsyncd_status; then
 		ocf_log info "Lsyncd daemon started successfully."
