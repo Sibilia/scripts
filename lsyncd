@@ -142,6 +142,10 @@ lsyncd_start() {
 		exit $OCF_ERR_GENERIC
 	fi
 
+	if [ ROOT -eq '' ]; then 
+		export ROOT=/
+	fi
+
 	if [ -n "$OCF_RESKEY_binpath" ]; then
 		COMMAND="$OCF_RESKEY_binpath -pidfile $PIDFILE $OCF_RESKEY_cmdline_options $CONF_FILE"
 		ocf_log debug "$COMMAND"
